@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cars</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Cars</h1>
+        <div id="alerts-container"></div>
+        <button class="btn btn-primary mb-3" onclick="addNewCar()">Add New Car</button>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Model</th>
+                    <th>Brand</th>
+                    <th>Year</th>
+                    <th>Price/Day</th>
+                    <th>Availability</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="carTableBody">
+                <!-- Car rows will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Add Car Modal -->
+    <div class="modal" id="addCarModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Car</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form onsubmit="handleAddCarSubmit(event)">
+                        <div class="form-group">
+                            <label for="brand">Brand</label>
+                            <input type="text" class="form-control" id="brand" name="brand" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="model">Model</label>
+                            <input type="text" class="form-control" id="model" name="model" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="year">Year</label>
+                            <input type="number" class="form-control" id="year" name="year" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="price">Price/Day</label>
+                            <input type="number" class="form-control" id="price" name="price" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="category">Category</label>
+                            <input type="text" class="form-control" id="category" name="category" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="transmission">Transmission</label>
+                            <input type="text" class="form-control" id="transmission" name="transmission" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="fuel_type">Fuel Type</label>
+                            <input type="text" class="form-control" id="fuel_type" name="fuel_type" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="seats">Seats</label>
+                            <input type="number" class="form-control" id="seats" name="seats" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="image_url">Image URL</label>
+                            <input type="text" class="form-control" id="image_url" name="image_url">
+                        </div>
+                        <div class="form-group form-check">
+                            <input type="checkbox" class="form-check-input" id="availability" name="availability">
+                            <label class="form-check-label" for="availability">Available</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Car</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Car Modal -->
+    <div class="modal" id="editCarModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Car</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form onsubmit="handleEditCarSubmit(event)">
+                        <input type="hidden" id="carId" name="carId">
+                        <div class="form-group">
+                            <label for="brand">Brand</label>
+                            <input type="text" class="form-control" id="brand" name="brand" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="model">Model</label>
+                            <input type="text" class="form-control" id="model" name="model" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="year">Year</label>
+                            <input type="number" class="form-control" id="year" name="year" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="price">Price/Day</label>
+                            <input type="number" class="form-control" id="price" name="price" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="category">Category</label>
+                            <input type="text" class="form-control" id="category" name="category" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="transmission">Transmission</label>
+                            <input type="text" class="form-control" id="transmission" name="transmission" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="fuel_type">Fuel Type</label>
+                            <input type="text" class="form-control" id="fuel_type" name="fuel_type" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="seats">Seats</label>
+                            <input type="number" class="form-control" id="seats" name="seats" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="image_url">Image URL</label>
+                            <input type="text" class="form-control" id="image_url" name="image_url">
+                        </div>
+                        <div class="form-group form-check">
+                            <input type="checkbox" class="form-check-input" id="availability" name="availability">
+                            <label class="form-check-label" for="availability">Available</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="admin.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .swal2-popup {
+            font-size: 1.2rem;
+        }
+    </style>
+</body>
+</html>

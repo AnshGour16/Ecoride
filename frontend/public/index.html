@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoRide - Car Rental Service</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+            <div class="container-fluid">
+                <a class="navbar-brand text-success" href="#"><i class="fas fa-car-side me-2"></i>EcoRide</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="index.html"><i class="fas fa-home me-1"></i>Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="cars.html"><i class="fas fa-car me-1"></i>Cars</a>
+                        </li>
+                        <li class="nav-item logged-in-only" style="display: none;">
+                            <a class="nav-link" href="bookings.html"><i class="fas fa-calendar-alt me-1"></i>My Bookings</a>
+                        </li>
+                        <li class="nav-item logged-in-only" style="display: none;">
+                            <a class="nav-link" href="#" id="dashboardLink"><i class="fas fa-tachometer-alt me-1"></i>Dashboard</a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav">
+                        <li class="nav-item logged-out-only">
+                            <a class="nav-link" href="login.html"><i class="fas fa-sign-in-alt me-1"></i>Login</a>
+                        </li>
+                        <li class="nav-item logged-in-only" style="display: none;">
+                            <div class="dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-user-circle me-1"></i><span class="user-name">Profile</span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                                    <li><a class="dropdown-item" href="dashboard.html"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                                    <li><a class="dropdown-item" href="bookings.html"><i class="fas fa-calendar-alt me-2"></i>My Bookings</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="#" id="logoutBtn"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="hero-content container text-center">
+                <h1 class="display-3 mb-4 text-white">Welcome to EcoRide</h1>
+                <p class="lead mb-5 text-white">Your eco-friendly car rental service. Explore our range of electric and hybrid cars today!</p>
+                <div class="cta-buttons">
+                    <a href="cars.html" class="btn btn-success btn-lg me-3"><i class="fas fa-car me-2"></i>View Cars</a>
+                    <a href="login.html" class="btn btn-outline-success btn-lg logged-out-only"><i class="fas fa-sign-in-alt me-2"></i>Get Started</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="features mt-5 pt-5">
+            <div class="row text-center">
+                <div class="col-md-4 mb-4">
+                    <div class="feature-card p-4">
+                        <i class="fas fa-leaf fa-3x mb-4 text-success"></i>
+                        <h3>Eco-Friendly</h3>
+                        <p>All our cars are electric or hybrid, helping reduce carbon emissions.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="feature-card p-4">
+                        <i class="fas fa-mobile-alt fa-3x mb-4 text-success"></i>
+                        <h3>Easy Booking</h3>
+                        <p>Book your car with just a few clicks, anytime, anywhere.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="feature-card p-4">
+                        <i class="fas fa-headset fa-3x mb-4 text-success"></i>
+                        <h3>24/7 Support</h3>
+                        <p>Our customer support team is always here to help you.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="featured-cars mt-5">
+            <h2 class="text-center mb-4">Featured Cars</h2>
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="car-card">
+                        <img src="https://images.unsplash.com/photo-1593941707882-a5bba14938c7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1024&q=80" alt="Tesla Model 3" class="img-fluid mb-3">
+                        <h4>Tesla Model 3</h4>
+                        <p class="text-success"><i class="fas fa-charging-station me-2"></i>Electric</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="car-card">
+                        <img src="https://images.unsplash.com/photo-1619767886558-efdc259cde1a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1024&q=80" alt="Toyota Prius" class="img-fluid mb-3">
+                        <h4>Toyota Prius</h4>
+                        <p class="text-success"><i class="fas fa-leaf me-2"></i>Hybrid</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="car-card">
+                        <img src="https://images.unsplash.com/photo-1560958089-b8a1929cea89?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1024&q=80" alt="Nissan Leaf" class="img-fluid mb-3">
+                        <h4>Nissan Leaf</h4>
+                        <p class="text-success"><i class="fas fa-charging-station me-2"></i>Electric</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="testimonials mt-5 py-5">
+            <h2 class="text-center mb-5">What Our Customers Say</h2>
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="testimonial-card">
+                        <div class="testimonial-content">
+                            <i class="fas fa-quote-left fa-2x text-success mb-3"></i>
+                            <p class="mb-4">"EcoRide made my trip so much better. The Tesla Model 3 was amazing, and the booking process was super easy!"</p>
+                            <div class="testimonial-author">
+                                <i class="fas fa-user-circle fa-2x me-2 text-success"></i>
+                                <div>
+                                    <h5 class="mb-1">Sarah Johnson</h5>
+                                    <div class="text-success">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="testimonial-card">
+                        <div class="testimonial-content">
+                            <i class="fas fa-quote-left fa-2x text-success mb-3"></i>
+                            <p class="mb-4">"As an environmentally conscious person, I love that I can rent eco-friendly cars. The service is outstanding!"</p>
+                            <div class="testimonial-author">
+                                <i class="fas fa-user-circle fa-2x me-2 text-success"></i>
+                                <div>
+                                    <h5 class="mb-1">Michael Chen</h5>
+                                    <div class="text-success">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star-half-alt"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="testimonial-card">
+                        <div class="testimonial-content">
+                            <i class="fas fa-quote-left fa-2x text-success mb-3"></i>
+                            <p class="mb-4">"The 24/7 support team was incredibly helpful when I needed assistance. Will definitely use EcoRide again!"</p>
+                            <div class="testimonial-author">
+                                <i class="fas fa-user-circle fa-2x me-2 text-success"></i>
+                                <div>
+                                    <h5 class="mb-1">Emily Rodriguez</h5>
+                                    <div class="text-success">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-dark text-light mt-5">
+        <div class="container py-4">
+            <div class="row">
+                <div class="col-lg-4 mb-4">
+                    <h5 class="text-success mb-3"><i class="fas fa-car-side me-2"></i>EcoRide</h5>
+                    <p>Your eco-friendly car rental service. Making transportation sustainable and accessible for everyone.</p>
+                    <div class="social-links">
+                        <a href="#" class="me-3"><i class="fab fa-facebook-f text-success"></i></a>
+                        <a href="#" class="me-3"><i class="fab fa-twitter text-success"></i></a>
+                        <a href="#" class="me-3"><i class="fab fa-instagram text-success"></i></a>
+                        <a href="#" class="me-3"><i class="fab fa-linkedin-in text-success"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-2 mb-4">
+                    <h5 class="mb-3">Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="index.html">Home</a></li>
+                        <li class="mb-2"><a href="cars.html">Cars</a></li>
+                        <li class="mb-2"><a href="bookings.html">My Bookings</a></li>
+                        <li class="mb-2"><a href="login.html">Login</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 mb-4">
+                    <h5 class="mb-3">Contact Us</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="fas fa-phone me-2 text-success"></i>+1 (555) 123-4567</li>
+                        <li class="mb-2"><i class="fas fa-envelope me-2 text-success"></i>support@ecoride.com</li>
+                        <li class="mb-2"><i class="fas fa-map-marker-alt me-2 text-success"></i>123 Green Street, Eco City</li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 mb-4">
+                    <h5 class="mb-3">Newsletter</h5>
+                    <p>Subscribe for updates and special offers!</p>
+                    <div class="input-group mb-3">
+                        <input type="email" class="form-control" placeholder="Enter your email" aria-label="Email for newsletter">
+                        <button class="btn btn-success" type="button">Subscribe</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="text-center p-3 border-top border-secondary">
+            © 2025 EcoRide. All rights reserved.
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dashboardLink = document.getElementById('dashboardLink');
+            if (dashboardLink) {
+                dashboardLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const user = JSON.parse(localStorage.getItem('user'));
+                    if (user && user.role === 'admin') {
+                        window.location.href = 'admin.html';
+                    } else {
+                        window.location.href = 'dashboard.html';
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

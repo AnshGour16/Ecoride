@@ -1,0 +1,336 @@
+// This file contains JavaScript functions for managing car-related functionalities.
+
+// API base URL
+const API_BASE_URL = 'http://localhost:5000/api';
+
+// Maintain state
+let carsData = [];
+let filteredCarsData = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadCars();
+    setupEventListeners();
+    setupSearchHandlers();
+});
+
+// Function to load and display available cars
+async function loadCars() {
+    const carList = document.getElementById('car-list');
+    try {
+        carList.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <div class="spinner-border text-success" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>`;
+
+        const response = await fetch(`${API_BASE_URL}/cars`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const responseData = await response.json();
+        console.log('Raw API response:', responseData);
+        
+        // Ensure carsData is an array
+        if (Array.isArray(responseData)) {
+            carsData = responseData;
+        } else if (responseData && typeof responseData === 'object' && Array.isArray(responseData.data)) {
+            carsData = responseData.data;
+        } else {
+            console.error('Expected array but got:', responseData);
+            carList.innerHTML = '<div class="col-12"><div class="alert alert-danger">Invalid data format received from server.</div></div>';
+            return;
+        }
+        
+        carList.innerHTML = '';
+
+        if (!carsData || carsData.length === 0) {
+            carList.innerHTML = '<div class="col-12"><div class="alert alert-info">No cars available at the moment.</div></div>';
+            return;
+        }
+        
+        carsData.forEach(car => {
+            const carCol = document.createElement('div');
+            carCol.className = 'col-md-4 mb-4';
+            carCol.innerHTML = createCarCard(car);
+            carList.appendChild(carCol);
+
+            if (car.availability) {
+                setupBookingFormListeners(car);
+            }
+        });
+    } catch (error) {
+        console.error('Error loading cars:', error);
+        carList.innerHTML = `
+            <div class="col-12">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error loading cars. Please try again later.
+                </div>
+            </div>`;
+    }
+}
+
+function createCarCard(car) {
+    let features = [];
+    try {
+        features = car.features ? JSON.parse(car.features) : [];
+    } catch (e) {
+        console.error('Error parsing car features:', e);
+    }
+
+    return `
+        <div class="card car-card h-100 shadow-sm">
+            <div class="card-img-container position-relative">
+                <img src="${car.image_url || 'images/car-placeholder.jpg'}" 
+                     class="card-img-top car-image" 
+                     alt="${car.brand} ${car.model}"
+                     onerror="this.src='images/car-placeholder.jpg'">
+                ${!car.availability ? '<div class="unavailable-overlay">Currently Unavailable</div>' : ''}
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">${car.brand} ${car.model}</h5>
+                <div class="car-details mb-3">
+                    <div class="detail-item">
+                        <i class="fas fa-calendar-alt"></i> ${car.year}
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-tag"></i> ${car.category || 'N/A'}
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-dollar-sign"></i> ${car.price}/day
+                    </div>
+                </div>
+                <div class="car-specs">
+                    <div class="spec-item">
+                        <i class="fas fa-cog"></i> ${car.transmission || 'N/A'}
+                    </div>
+                    <div class="spec-item">
+                        <i class="fas fa-gas-pump"></i> ${car.fuel_type || 'N/A'}
+                    </div>
+                    <div class="spec-item">
+                        <i class="fas fa-users"></i> ${car.seats || 'N/A'} seats
+                    </div>
+                </div>
+                ${features.length > 0 ? `
+                    <div class="car-features mt-3">
+                        <small class="text-muted">Features: ${features.join(', ')}</small>
+                    </div>
+                ` : ''}
+                ${car.availability ? `
+                    <form id="booking-form-${car.id}" class="booking-form mt-3">
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label for="start-date-${car.id}">Start Date</label>
+                                    <input type="date" class="form-control form-control-sm" 
+                                        id="start-date-${car.id}" 
+                                        min="${new Date().toISOString().split('T')[0]}" required>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label for="end-date-${car.id}">End Date</label>
+                                    <input type="date" class="form-control form-control-sm" 
+                                        id="end-date-${car.id}" 
+                                        min="${new Date().toISOString().split('T')[0]}" required>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100 mt-3">
+                            <i class="fas fa-calendar-check me-2"></i>Book Now
+                        </button>
+                    </form>
+                ` : '<div class="alert alert-warning mt-3 mb-0">Currently unavailable</div>'}
+            </div>
+        </div>
+    `;
+}
+
+function setupBookingFormListeners(car) {
+    const bookingForm = document.getElementById(`booking-form-${car.id}`);
+    const startDateInput = document.getElementById(`start-date-${car.id}`);
+    const endDateInput = document.getElementById(`end-date-${car.id}`);
+
+    startDateInput.addEventListener('change', () => validateDates(startDateInput, endDateInput));
+    endDateInput.addEventListener('change', () => validateDates(startDateInput, endDateInput));
+
+    bookingForm.addEventListener('submit', (e) => handleBooking(e, car));
+}
+
+// Function to validate booking dates
+function validateDates(startInput, endInput) {
+    const startDate = new Date(startInput.value);
+    const endDate = new Date(endInput.value);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (startDate < today) {
+        startInput.value = '';
+        alert('Start date cannot be in the past');
+        return false;
+    }
+
+    if (endDate < startDate) {
+        endInput.value = '';
+        alert('End date must be after start date');
+        return false;
+    }
+
+    return true;
+}
+
+// Function to handle booking submission
+async function handleBooking(event, car) {
+    event.preventDefault();
+
+    const form = event.target;
+    const startDate = form.querySelector(`#start-date-${car.id}`).value;
+    const endDate = form.querySelector(`#end-date-${car.id}`).value;
+
+    if (!validateDates(
+        document.getElementById(`start-date-${car.id}`),
+        document.getElementById(`end-date-${car.id}`)
+    )) {
+        return;
+    }
+
+    // Get token from localStorage
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    try {
+        const submitButton = form.querySelector('button[type="submit"]');
+        const originalButtonText = submitButton.innerHTML;
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+
+        const response = await fetch(`${API_BASE_URL}/bookings`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                car_id: car.id,
+                start_date: startDate,
+                end_date: endDate
+            })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            alert('Booking successful! You can view your booking in the My Bookings section.');
+            form.reset();
+            window.location.href = 'bookings.html';
+        } else {
+            throw new Error(result.message || 'Failed to create booking');
+        }
+    } catch (error) {
+        console.error('Booking error:', error);
+        alert(error.message || 'An error occurred while processing your booking. Please try again.');
+    } finally {
+        const submitButton = form.querySelector('button[type="submit"]');
+        submitButton.disabled = false;
+        submitButton.innerHTML = '<i class="fas fa-calendar-check me-2"></i>Book Now';
+    }
+}
+
+// Function to filter cars by type
+function filterCars(type) {
+    const carList = document.getElementById('car-list');
+    if (!carsData || carsData.length === 0) {
+        carList.innerHTML = '<div class="col-12"><div class="alert alert-info">No cars available.</div></div>';
+        return;
+    }
+
+    try {
+        let filteredCars;
+        if (type === 'all') {
+            filteredCars = carsData;
+        } else {
+            filteredCars = carsData.filter(car => 
+                car.category && car.category.toLowerCase() === type.toLowerCase()
+            );
+        }
+
+        if (filteredCars.length === 0) {
+            carList.innerHTML = '<div class="col-12"><div class="alert alert-info">No cars found in this category.</div></div>';
+            return;
+        }
+
+        carList.innerHTML = '';
+        filteredCars.forEach(car => {
+            const carCol = document.createElement('div');
+            carCol.className = 'col-md-4 mb-4';
+            // Reuse the car card creation logic
+            carCol.innerHTML = createCarCard(car);
+            carList.appendChild(carCol);
+        });
+    } catch (error) {
+        console.error('Error filtering cars:', error);
+        carList.innerHTML = '<div class="col-12"><div class="alert alert-danger">Error filtering cars. Please try again.</div></div>';
+    }
+}
+
+// Function to display filtered cars
+function displayFilteredCars(cars) {
+    const carList = document.getElementById('car-list');
+    carList.innerHTML = '';
+    
+    if (!Array.isArray(cars)) {
+        console.error('Expected array but got:', cars);
+        carList.innerHTML = '<div class="col-12"><div class="alert alert-danger">Invalid data format.</div></div>';
+        return;
+    }
+    
+    cars.forEach(car => {
+        const carCol = document.createElement('div');
+        carCol.className = 'col-md-4 mb-4';
+        carCol.innerHTML = createCarCard(car);
+        carList.appendChild(carCol);
+    });
+}
+
+// Setup event listeners
+function setupEventListeners() {
+    // Filter buttons
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            filterCars(button.getAttribute('data-filter'));
+        });
+    });
+
+    // Close buttons for modals
+    const closeButtons = document.querySelectorAll('.close');
+    closeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const modal = button.closest('.modal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        });
+    });
+
+    // Click outside modal to close
+    window.addEventListener('click', (event) => {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+        }
+    });
+}
+
+// Setup search handlers (placeholder - implement as needed)
+function setupSearchHandlers() {
+    // This function needs to be defined since it's called in the DOMContentLoaded event
+    // but it's not implemented in the provided code
+    console.log('Search handlers would be set up here');
+}
