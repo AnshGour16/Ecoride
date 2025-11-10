@@ -3,4 +3,7 @@ node_modules/
 *.log
 dist/
 build/
-.DS_Store 
+.DS_Store
+
+# Docker volumes and data
+docker-compose.override.yml
