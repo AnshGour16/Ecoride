@@ -582,10 +582,17 @@ function showAdminSection(section) {
     document.getElementById('carTableBody').style.display = section === 'cars' ? 'block' : 'none';
     document.getElementById('bookingTableBody').style.display = section === 'bookings' ? 'block' : 'none';
     
+    // Show/hide payments section
+    const paymentsSection = document.getElementById('paymentsSection');
+    if (paymentsSection) {
+        paymentsSection.style.display = section === 'payments' ? 'block' : 'none';
+    }
+    
     document.querySelectorAll('.admin-btn').forEach(btn => btn.classList.remove('active'));
     if (section === 'users') document.getElementById('btnUsers').classList.add('active');
     if (section === 'cars') document.getElementById('btnCars').classList.add('active');
     if (section === 'bookings') document.getElementById('btnBookings').classList.add('active');
+    if (section === 'payments') document.getElementById('btnPayments').classList.add('active');
     console.log('Switched to section:', section);
 }
 
@@ -616,9 +623,226 @@ function loadBookings() {
 
 window.loadBookings = loadBookings;
 
+// Payment management functions
+function loadPayments() {
+    showLoading('paymentTableBody');
+    makeAuthenticatedRequest('/payments')
+        .then(data => {
+            console.log('Payments data:', data);
+            if (data.success && data.payments) {
+                document.getElementById('paymentTableBody').innerHTML = generatePaymentsTable(data.payments);
+            } else {
+                document.getElementById('paymentTableBody').innerHTML = '<tr><td colspan="8" class="text-center">No payments found.</td></tr>';
+            }
+            showAdminSection('payments');
+        })
+        .catch(err => {
+            console.error('Error loading payments:', err);
+            showError('paymentTableBody', 'Error loading payments.');
+            showAdminSection('payments');
+        });
+}
+
+function generatePaymentsTable(payments) {
+    return payments.map(payment => `
+        <tr>
+            <td>${payment.id}</td>
+            <td>#${payment.booking_id}</td>
+            <td>${payment.user_name || 'N/A'}</td>
+            <td>${payment.brand || ''} ${payment.model || ''}</td>
+            <td>Rs ${payment.amount}</td>
+            <td>
+                <span class="badge bg-${getPaymentStatusColor(payment.payment_status)}">
+                    ${payment.payment_status.charAt(0).toUpperCase() + payment.payment_status.slice(1)}
+                </span>
+            </td>
+            <td>${payment.payment_method}</td>
+            <td>${payment.transaction_id || 'N/A'}</td>
+            <td>${formatDateTime(payment.payment_date)}</td>
+            <td>
+                <button class="btn btn-sm btn-info me-1" onclick="viewPaymentDetails(${payment.id})">
+                    <i class="fas fa-eye"></i>
+                </button>
+                ${payment.payment_status === 'completed' ? 
+                    `<button class="btn btn-sm btn-warning" onclick="processRefund(${payment.id}, ${payment.amount})">
+                        <i class="fas fa-undo"></i>
+                    </button>` : ''}
+            </td>
+        </tr>
+    `).join('');
+}
+
+function getPaymentStatusColor(status) {
+    switch(status) {
+        case 'completed': return 'success';
+        case 'pending': return 'warning';
+        case 'failed': return 'danger';
+        case 'refunded': return 'secondary';
+        default: return 'secondary';
+    }
+}
+
+function viewPaymentDetails(paymentId) {
+    makeAuthenticatedRequest(`/payments/${paymentId}`)
+        .then(data => {
+            if (data.success && data.payment) {
+                showPaymentDetailsModal(data.payment);
+            } else {
+                alert('Error loading payment details');
+            }
+        })
+        .catch(err => {
+            console.error('Error loading payment details:', err);
+            alert('Error loading payment details');
+        });
+}
+
+function showPaymentDetailsModal(payment) {
+    const modalHtml = `
+        <div class="modal fade" id="paymentDetailsModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content bg-dark text-white">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Payment Details - ID: ${payment.id}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Booking ID:</strong> #${payment.booking_id}</p>
+                                <p><strong>Amount:</strong> Rs ${payment.amount}</p>
+                                <p><strong>Payment Method:</strong> ${payment.payment_method}</p>
+                                <p><strong>Status:</strong> 
+                                    <span class="badge bg-${getPaymentStatusColor(payment.payment_status)}">
+                                        ${payment.payment_status}
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Transaction ID:</strong> ${payment.transaction_id || 'N/A'}</p>
+                                <p><strong>Payment Date:</strong> ${formatDateTime(payment.payment_date)}</p>
+                                <p><strong>Created:</strong> ${formatDateTime(payment.created_at)}</p>
+                                ${payment.refund_amount ? `<p><strong>Refund Amount:</strong> Rs ${payment.refund_amount}</p>` : ''}
+                                ${payment.refund_date ? `<p><strong>Refund Date:</strong> ${formatDateTime(payment.refund_date)}</p>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if present
+    const existing = document.getElementById('paymentDetailsModal');
+    if (existing) existing.remove();
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('paymentDetailsModal'));
+    modal.show();
+}
+
+function processRefund(paymentId, originalAmount) {
+    const refundAmount = prompt(`Enter refund amount (Max: Rs ${originalAmount}):`);
+    if (!refundAmount) return;
+    
+    const amount = parseFloat(refundAmount);
+    if (isNaN(amount) || amount <= 0 || amount > originalAmount) {
+        alert('Invalid refund amount');
+        return;
+    }
+    
+    const reason = prompt('Enter refund reason (optional):') || 'Admin refund';
+    
+    if (confirm(`Process refund of Rs ${amount}?`)) {
+        makeAuthenticatedRequest(`/payments/${paymentId}/refund`, {
+            method: 'POST',
+            body: { refund_amount: amount, reason: reason }
+        })
+        .then(data => {
+            if (data.success) {
+                alert('Refund processed successfully');
+                loadPayments(); // Reload payments table
+            } else {
+                alert('Error processing refund: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(err => {
+            console.error('Error processing refund:', err);
+            alert('Error processing refund');
+        });
+    }
+}
+
+function loadPaymentStats() {
+    makeAuthenticatedRequest('/payments/admin/stats')
+        .then(data => {
+            if (data.success && data.stats) {
+                displayPaymentStats(data.stats);
+            }
+        })
+        .catch(err => {
+            console.error('Error loading payment stats:', err);
+        });
+}
+
+function displayPaymentStats(stats) {
+    const statsHtml = `
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <h5>Total Revenue</h5>
+                        <h3>Rs ${stats.total_revenue || 0}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark">
+                    <div class="card-body">
+                        <h5>Pending Amount</h5>
+                        <h3>Rs ${stats.pending_amount || 0}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-danger text-white">
+                    <div class="card-body">
+                        <h5>Failed Payments</h5>
+                        <h3>${stats.failed_count || 0}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <h5>Avg Payment</h5>
+                        <h3>Rs ${Math.round(stats.avg_payment_amount || 0)}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const contentArea = document.getElementById('admin-content');
+    contentArea.innerHTML = statsHtml + contentArea.innerHTML;
+}
+
+function formatDateTime(dateString) {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleString();
+}
+
 // Make functions available globally
 window.loadUsers = loadUsers;
 window.loadCars = loadCars;
+window.loadBookings = loadBookings;
+window.loadPayments = loadPayments;
 window.loadBookingMetrics = loadBookingMetrics;
 window.deleteUser = deleteUser;
 window.viewUserDetails = viewUserDetails;
@@ -630,3 +854,5 @@ window.editCar = editCar;
 window.handleEditCarSubmit = handleEditCarSubmit;
 window.deleteCar = deleteCar;
 window.toggleCarAvailability = toggleCarAvailability;
+window.viewPaymentDetails = viewPaymentDetails;
+window.processRefund = processRefund;

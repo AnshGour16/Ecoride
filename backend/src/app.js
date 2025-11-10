@@ -8,6 +8,7 @@ const authRoutes = require('./routes/auth');
 const carRoutes = require('./routes/cars');
 const bookingRoutes = require('./routes/bookings');
 const adminRoutes = require('./routes/admin');
+const paymentRoutes = require('./routes/payments');
 const errorHandler = require('./middleware/errorHandler');
 const locationsRouter = require('./routes/locations');
 
@@ -41,6 +42,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/cars', carRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/payments', paymentRoutes);
 app.use('/api/locations', locationsRouter);
 
 // Health check endpoint

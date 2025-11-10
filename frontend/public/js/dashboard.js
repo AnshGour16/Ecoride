@@ -350,31 +350,32 @@ function updateCurrentBooking(booking) {
                         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
 
                         try {
-                        const selectedMethod = document.querySelector('input[name="paymentMethod"]:checked');
+                            const selectedMethod = document.querySelector('input[name="paymentMethod"]:checked');
                             if (!selectedMethod) {
                                 throw new Error('Please select a payment method');
                             }
-
-                            let paymentData = { 
-                                method: selectedMethod.value,
-                                amount: booking.total_amount,
-                                booking_id: booking.id
-                            };
 
                             // Validate booking data
                             if (!booking || !booking.id || !booking.total_amount) {
                                 throw new Error('Invalid booking data');
                             }
 
-                            console.log('Booking data:', booking);
+                            console.log('Processing payment for booking:', booking.id);
                             console.log('Payment method:', selectedMethod.value);
 
-                        if (selectedMethod.value === 'card') {
-                            const cardNumber = document.getElementById('cardNumber').value;
-                            const expiry = document.getElementById('expiry').value;
-                            const cvc = document.getElementById('cvc').value;
+                            // Prepare payment data
+                            let paymentData = { 
+                                booking_id: booking.id,
+                                payment_method: selectedMethod.value,
+                                amount: booking.total_amount
+                            };
+
+                            if (selectedMethod.value === 'card') {
+                                const cardNumber = document.getElementById('cardNumber').value;
+                                const expiry = document.getElementById('expiry').value;
+                                const cvc = document.getElementById('cvc').value;
                                 
-                            if (!cardNumber || !expiry || !cvc) {
+                                if (!cardNumber || !expiry || !cvc) {
                                     throw new Error('Please fill in all card details');
                                 }
 
@@ -394,154 +395,59 @@ function updateCurrentBooking(booking) {
                                     expiry: expiry,
                                     cvc: cvc
                                 };
-                            maskedInfo = `Card: **** **** **** ${cardNumber.slice(-4)}`;
-
-                                // Simulate successful payment
-                                console.log('Payment details validated, simulating successful payment');
-                                
-                                // Create success response data
-                                const responseData = {
-                                    success: true,
-                                    message: 'Payment successful',
-                                    booking: {
-                                        ...booking,
-                                        payment_status: 'paid',
-                                        status: booking.status,
-                                        total_amount: booking.total_amount,
-                                        paid_at: new Date().toISOString()
-                                    }
-                                };
-
-                                // Update the booking status in localStorage
-                                const user = JSON.parse(localStorage.getItem('user')) || {};
-                                if (user.bookings) {
-                                    const bookingIndex = user.bookings.findIndex(b => b.id === booking.id);
-                                    if (bookingIndex !== -1) {
-                                        // Update the booking with payment status
-                                        const updatedBooking = {
-                                            ...booking,
-                                            payment_status: 'paid',
-                                            paid_at: new Date().toISOString()
-                                        };
-                                        user.bookings[bookingIndex] = updatedBooking;
-                                        localStorage.setItem('user', JSON.stringify(user));
-                                    }
-                                }
-
-                                // Also store the payment status separately
-                                const paymentStatuses = JSON.parse(localStorage.getItem('paymentStatuses') || '{}');
-                                paymentStatuses[booking.id] = {
-                                    status: 'paid',
-                                    paid_at: new Date().toISOString()
-                                };
-                                localStorage.setItem('paymentStatuses', JSON.stringify(paymentStatuses));
-
-                                // Hide payment modal
-                            modal.hide();
-
-                                // Immediately update the UI
-                                const updatedBooking = {
-                                    ...booking,
-                                    payment_status: 'paid',
-                                    paid_at: new Date().toISOString()
-                                };
-                                updateCurrentBooking(updatedBooking);
-
-                                // Show payment success alert
-                                const dashboardContainer = document.querySelector('main.container');
-                                if (dashboardContainer) {
-                                    const alertDiv = document.createElement('div');
-                                    alertDiv.className = 'alert alert-success text-center';
-                                    alertDiv.textContent = 'Payment successful!';
-                                    dashboardContainer.prepend(alertDiv);
-                                    
-                                    // Wait for 2 seconds to show the success message
-                            setTimeout(() => {
-                                        // Then show the bill modal
-                                const billModalBody = document.getElementById('billModalBody');
-                                if (billModalBody) billModalBody.innerHTML = billHtml;
-                                const billModal = new bootstrap.Modal(document.getElementById('billModal'));
-                                billModal.show();
-                                        
-                                // Print button logic
-                                const printBtn = document.getElementById('printBillBtn');
-                                if (printBtn) {
-                                    printBtn.onclick = function() {
-                                        const printContents = billModalBody.innerHTML;
-                                        const win = window.open('', '', 'height=600,width=400');
-                                        win.document.write('<html><head><title>E-Bill Receipt</title>');
-                                        win.document.write('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css">');
-                                        win.document.write('</head><body>');
-                                        win.document.write(printContents);
-                                        win.document.write('</body></html>');
-                                        win.document.close();
-                                        win.focus();
-                                        setTimeout(() => { win.print(); win.close(); }, 500);
-                                    };
-                                }
-                                        
-                                        // Remove success message and close bill modal after delay
-                                setTimeout(() => {
-                                            alertDiv.remove();
-                                    billModal.hide();
-                                        }, 8000); // Auto-close after 8s
-                                    }, 2000); // Wait 2 seconds before showing bill
-                                }
                             } else if (selectedMethod.value === 'upi') {
                                 const upiId = document.getElementById('upiId').value;
                                 if (!upiId) {
                                     throw new Error('Please enter UPI ID');
                                 }
-                                if (!/^[\w.-]+@[\w.-]+$/.test(upiId)) {
-                                    throw new Error('Invalid UPI ID format');
-                                }
                                 paymentData.upi_id = upiId;
-                                maskedInfo = `UPI: ${upiId}`;
+                            }
 
-                                // Simulate successful payment
-                                console.log('Payment details validated, simulating successful payment');
-                                
-                                // Create success response data
-                                const responseData = {
-                                    success: true,
-                                    message: 'Payment successful',
-                                    booking: {
-                                        ...booking,
-                                        payment_status: 'paid',
-                                        status: booking.status,
-                                        total_amount: booking.total_amount,
-                                        paid_at: new Date().toISOString()
-                                    }
-                                };
+                            // Get auth token
+                            const token = localStorage.getItem('token');
+                            if (!token) {
+                                throw new Error('Please log in to continue payment');
+                            }
 
-                                // Update the booking status in localStorage
+                            // Make API call to process payment
+                            const response = await fetch(`${window.API_BASE_URL}/payments/process`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify(paymentData)
+                            });
+
+                            const responseData = await response.json();
+                            console.log('Payment response:', responseData);
+
+                            if (responseData.success) {
+                                // Payment successful
+                                modal.hide();
+
+                                // Update booking status in localStorage
                                 const user = JSON.parse(localStorage.getItem('user')) || {};
                                 if (user.bookings) {
                                     const bookingIndex = user.bookings.findIndex(b => b.id === booking.id);
                                     if (bookingIndex !== -1) {
-                                        // Update the booking with payment status
-                                        const updatedBooking = {
-                                            ...booking,
-                                            payment_status: 'paid',
-                                            paid_at: new Date().toISOString()
-                                        };
-                                        user.bookings[bookingIndex] = updatedBooking;
+                                        user.bookings[bookingIndex].payment_status = 'paid';
+                                        user.bookings[bookingIndex].paid_at = new Date().toISOString();
                                         localStorage.setItem('user', JSON.stringify(user));
                                     }
                                 }
 
-                                // Also store the payment status separately
+                                // Store payment status
                                 const paymentStatuses = JSON.parse(localStorage.getItem('paymentStatuses') || '{}');
                                 paymentStatuses[booking.id] = {
                                     status: 'paid',
-                                    paid_at: new Date().toISOString()
+                                    paid_at: new Date().toISOString(),
+                                    transaction_id: responseData.transaction_id,
+                                    payment_id: responseData.payment_id
                                 };
                                 localStorage.setItem('paymentStatuses', JSON.stringify(paymentStatuses));
 
-                                // Hide payment modal
-                                modal.hide();
-
-                                // Immediately update the UI
+                                // Update current booking display
                                 const updatedBooking = {
                                     ...booking,
                                     payment_status: 'paid',
@@ -549,49 +455,56 @@ function updateCurrentBooking(booking) {
                                 };
                                 updateCurrentBooking(updatedBooking);
 
-                                // Show payment success alert
-                                    const dashboardContainer = document.querySelector('main.container');
-                                    if (dashboardContainer) {
-                                        const alertDiv = document.createElement('div');
-                                        alertDiv.className = 'alert alert-success text-center';
-                                        alertDiv.textContent = 'Payment successful!';
-                                        dashboardContainer.prepend(alertDiv);
+                                // Show success message
+                                const dashboardContainer = document.querySelector('main.container');
+                                if (dashboardContainer) {
+                                    const alertDiv = document.createElement('div');
+                                    alertDiv.className = 'alert alert-success text-center';
+                                    alertDiv.innerHTML = `
+                                        <i class="fas fa-check-circle me-2"></i>
+                                        Payment successful! Transaction ID: ${responseData.transaction_id}
+                                    `;
+                                    dashboardContainer.prepend(alertDiv);
                                     
-                                    // Wait for 2 seconds to show the success message
+                                    // Auto remove alert after 5 seconds
                                     setTimeout(() => {
-                                        // Then show the bill modal
-                                        const billModalBody = document.getElementById('billModalBody');
-                                        if (billModalBody) billModalBody.innerHTML = billHtml;
-                                        const billModal = new bootstrap.Modal(document.getElementById('billModal'));
-                                        billModal.show();
-                                        
-                                        // Print button logic
-                                        const printBtn = document.getElementById('printBillBtn');
-                                        if (printBtn) {
-                                            printBtn.onclick = function() {
-                                                const printContents = billModalBody.innerHTML;
-                                                const win = window.open('', '', 'height=600,width=400');
-                                                win.document.write('<html><head><title>E-Bill Receipt</title>');
-                                                win.document.write('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css">');
-                                                win.document.write('</head><body>');
-                                                win.document.write(printContents);
-                                                win.document.write('</body></html>');
-                                                win.document.close();
-                                                win.focus();
-                                                setTimeout(() => { win.print(); win.close(); }, 500);
-                                            };
-                                        }
-                                        
-                                        // Remove success message and close bill modal after delay
-                                        setTimeout(() => {
-                                            alertDiv.remove();
-                                            billModal.hide();
-                                        }, 8000); // Auto-close after 8s
-                                    }, 2000); // Wait 2 seconds before showing bill
+                                        alertDiv.remove();
+                                    }, 5000);
                                 }
+
+                                // Show bill modal after short delay
+                                setTimeout(() => {
+                                    const billHtml = generateBillHtml(updatedBooking, responseData);
+                                    const billModalBody = document.getElementById('billModalBody');
+                                    if (billModalBody) billModalBody.innerHTML = billHtml;
+                                    const billModal = new bootstrap.Modal(document.getElementById('billModal'));
+                                    billModal.show();
+                                    
+                                    // Print button logic
+                                    const printBtn = document.getElementById('printBillBtn');
+                                    if (printBtn) {
+                                        printBtn.onclick = function() {
+                                            const printContents = billModalBody.innerHTML;
+                                            const win = window.open('', '', 'height=600,width=400');
+                                            win.document.write('<html><head><title>E-Bill Receipt</title>');
+                                            win.document.write('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css">');
+                                            win.document.write('</head><body>');
+                                            win.document.write(printContents);
+                                            win.document.write('</body></html>');
+                                            win.document.close();
+                                            win.focus();
+                                            setTimeout(() => { win.print(); win.close(); }, 500);
+                                        };
                                     }
-                        } catch (err) {
-                            errorDiv.textContent = 'Payment failed. Please try again.';
+                                }, 1500);
+                            } else {
+                                // Payment failed
+                                throw new Error(responseData.error_message || responseData.message || 'Payment failed');
+                            }
+
+                        } catch (error) {
+                            console.error('Payment error:', error);
+                            errorDiv.textContent = error.message || 'Payment failed. Please try again.';
                             errorDiv.style.display = 'block';
                         } finally {
                             submitBtn.disabled = false;
@@ -602,6 +515,31 @@ function updateCurrentBooking(booking) {
             });
         });
     }
+}// Helper function to generate bill HTML
+function generateBillHtml(booking, paymentData = {}) {
+    const user = JSON.parse(localStorage.getItem('user')) || {};
+    const paidAt = paymentData.paid_at || booking.paid_at || new Date().toISOString();
+    
+    return `
+        <div class='text-center mb-3'>
+            <i class='fas fa-check-circle fa-2x text-success mb-2'></i><br>
+            <strong>Payment Successful!</strong>
+        </div>
+        <div class='card bg-light text-dark mb-2 border-success'>
+            <div class='card-body'>
+                <h5 class='card-title text-success'>E-Bill Receipt</h5>
+                <p><strong>Name:</strong> ${user.name || ''}</p>
+                <p><strong>Email:</strong> ${user.email || ''}</p>
+                <p><strong>Car:</strong> ${booking.car?.brand || ''} ${booking.car?.model || ''}</p>
+                <p><strong>Booking Dates:</strong> ${formatDate(booking.start_date)} - ${formatDate(booking.end_date)}</p>
+                <p><strong>Amount Paid:</strong> Rs${booking.total_amount || 0}</p>
+                <p><strong>Payment Status:</strong> <span class="badge bg-success">Paid</span></p>
+                ${paymentData.transaction_id ? `<p><strong>Transaction ID:</strong> ${paymentData.transaction_id}</p>` : ''}
+                <p><strong>Paid At:</strong> ${new Date(paidAt).toLocaleString()}</p>
+                <p class='small text-muted'>Thank you for your payment!</p>
+            </div>
+        </div>
+    `;
 }
 
 function getActivityIcon(type) {
