@@ -45,6 +45,7 @@
             <button class="btn btn-success admin-btn" id="btnUsers" onclick="loadUsers()"><i class="fas fa-users me-2"></i>View Users</button>
             <button class="btn btn-success admin-btn" id="btnBookings" onclick="loadBookings()"><i class="fas fa-calendar-alt me-2"></i>View All Bookings</button>
             <button class="btn btn-success admin-btn" id="btnCars" onclick="loadCars()"><i class="fas fa-car me-2"></i>Manage Cars</button>
+            <button class="btn btn-success admin-btn" id="btnPayments" onclick="loadPayments()"><i class="fas fa-credit-card me-2"></i>View Payments</button>
             <button class="btn btn-success admin-btn" onclick="addNewCar()"><i class="fas fa-plus me-2"></i>Add New Car</button>
         </div>
         <div id="admin-content">
@@ -52,6 +53,30 @@
             <div id="userTableBody" style="display:none;"></div>
             <div id="carTableBody" style="display:none;"></div>
             <div id="bookingTableBody" style="display:none;"></div>
+            <div id="paymentsSection" style="display:none;">
+                <h3 class="text-center mb-4">Payment Management</h3>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Booking</th>
+                                <th>User</th>
+                                <th>Car</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Method</th>
+                                <th>Transaction ID</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="paymentTableBody">
+                            <!-- Payment data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 

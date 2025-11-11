@@ -354,16 +354,12 @@ async function handleBookingSubmit(event) {
             throw new Error(result.message || 'Failed to create booking');
         }
 
-        // Close modal and show success message
+        // Close modal and show payment interface
         const modal = bootstrap.Modal.getInstance(document.getElementById('bookingModal'));
         if (modal) modal.hide();
         
-        showNotification('Booking successful! Redirecting to bookings page...', notificationTypes.SUCCESS);
-        
-        // Redirect after a short delay
-        setTimeout(() => {
-            window.location.href = 'bookings.html';
-        }, 2000);
+        // Show payment interface for the newly created booking
+        showPaymentInterface(result.booking);
 
     } catch (error) {
         console.error('Booking error:', error);
@@ -462,4 +458,342 @@ async function deleteCar(carId) {
         console.error('Error deleting car:', error);
         alert('Error deleting car. Please try again.');
     }
+}
+
+// Payment Interface Functions
+function showPaymentInterface(booking) {
+    const modal = new bootstrap.Modal(document.getElementById('bookingModal'));
+    const modalBody = document.querySelector('#bookingModal .modal-body');
+    
+    // Calculate total amount (assuming it's available in booking object)
+    const totalAmount = booking.total_amount || 0;
+    
+    modalBody.innerHTML = `
+        <div class="payment-interface bg-dark text-light p-4 rounded">
+            <div class="text-center mb-4">
+                <h4 class="text-success">Complete Your Payment</h4>
+                <p class="text-muted">Booking ID: #${booking.id}</p>
+            </div>
+            
+            <div class="booking-summary mb-4 p-3 border border-success rounded">
+                <h5 class="text-success mb-3">Booking Summary</h5>
+                <div class="row">
+                    <div class="col-6"><strong>Car:</strong></div>
+                    <div class="col-6">${booking.car?.brand || 'Car'} ${booking.car?.model || ''}</div>
+                </div>
+                <div class="row">
+                    <div class="col-6"><strong>Start Date:</strong></div>
+                    <div class="col-6">${new Date(booking.start_date).toLocaleDateString()}</div>
+                </div>
+                <div class="row">
+                    <div class="col-6"><strong>End Date:</strong></div>
+                    <div class="col-6">${new Date(booking.end_date).toLocaleDateString()}</div>
+                </div>
+                <div class="row">
+                    <div class="col-6"><strong>Total Amount:</strong></div>
+                    <div class="col-6 text-success"><h5>₹${totalAmount}</h5></div>
+                </div>
+            </div>
+
+            <form id="payment-form">
+                <input type="hidden" name="bookingId" value="${booking.id}">
+                <input type="hidden" name="amount" value="${totalAmount}">
+                
+                <div class="payment-method-selection mb-4">
+                    <h5 class="text-success mb-3">Select Payment Method</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="payment-option p-3 border border-success rounded" 
+                                 style="cursor: pointer;" 
+                                 onclick="selectPaymentMethod('card')">
+                                <input type="radio" id="card-payment" name="paymentMethod" value="card" class="me-2">
+                                <label for="card-payment" class="form-label">
+                                    <i class="fas fa-credit-card me-2"></i>Credit/Debit Card
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="payment-option p-3 border border-success rounded" 
+                                 style="cursor: pointer;" 
+                                 onclick="selectPaymentMethod('upi')">
+                                <input type="radio" id="upi-payment" name="paymentMethod" value="upi" class="me-2">
+                                <label for="upi-payment" class="form-label">
+                                    <i class="fas fa-mobile-alt me-2"></i>UPI Payment
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Payment Form -->
+                <div id="card-payment-form" class="payment-form-section" style="display: none;">
+                    <h6 class="text-success mb-3">Card Details</h6>
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="cardNumber" class="form-label">Card Number</label>
+                            <input type="text" class="form-control bg-dark text-light border-success" 
+                                   id="cardNumber" name="cardNumber" placeholder="1234 5678 9012 3456" 
+                                   maxlength="19" oninput="formatCardNumber(this)">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="expiryDate" class="form-label">Expiry Date</label>
+                            <input type="text" class="form-control bg-dark text-light border-success" 
+                                   id="expiryDate" name="expiryDate" placeholder="MM/YY" 
+                                   maxlength="5" oninput="formatExpiryDate(this)">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cvv" class="form-label">CVV</label>
+                            <input type="text" class="form-control bg-dark text-light border-success" 
+                                   id="cvv" name="cvv" placeholder="123" maxlength="4">
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label for="cardholderName" class="form-label">Cardholder Name</label>
+                            <input type="text" class="form-control bg-dark text-light border-success" 
+                                   id="cardholderName" name="cardholderName" placeholder="John Doe">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- UPI Payment Form -->
+                <div id="upi-payment-form" class="payment-form-section" style="display: none;">
+                    <h6 class="text-success mb-3">UPI Details</h6>
+                    <div class="mb-3">
+                        <label for="upiId" class="form-label">UPI ID</label>
+                        <input type="text" class="form-control bg-dark text-light border-success" 
+                               id="upiId" name="upiId" placeholder="your-upi@paytm">
+                    </div>
+                </div>
+
+                <div class="text-end mt-4">
+                    <button type="button" class="btn btn-secondary me-2" onclick="cancelPayment()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-success" id="paymentSubmitBtn">
+                        <i class="fas fa-lock me-2"></i>Pay ₹${totalAmount}
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    // Attach payment form event listener
+    const paymentForm = document.getElementById('payment-form');
+    if (paymentForm) {
+        paymentForm.addEventListener('submit', handlePaymentSubmit);
+    }
+    
+    modal.show();
+}
+
+function selectPaymentMethod(method) {
+    // Update radio button
+    document.querySelector(`input[value="${method}"]`).checked = true;
+    
+    // Hide all payment forms
+    document.querySelectorAll('.payment-form-section').forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    // Show selected payment form
+    const formToShow = document.getElementById(`${method}-payment-form`);
+    if (formToShow) {
+        formToShow.style.display = 'block';
+    }
+    
+    // Update payment option styling
+    document.querySelectorAll('.payment-option').forEach(option => {
+        option.classList.remove('border-primary');
+        option.style.backgroundColor = '';
+    });
+    
+    const selectedOption = document.querySelector(`input[value="${method}"]`).closest('.payment-option');
+    selectedOption.classList.add('border-primary');
+    selectedOption.style.backgroundColor = 'rgba(40, 167, 69, 0.1)';
+}
+
+async function handlePaymentSubmit(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    const bookingId = formData.get('bookingId');
+    const amount = formData.get('amount');
+    const paymentMethod = formData.get('paymentMethod');
+    
+    if (!paymentMethod) {
+        showNotification('Please select a payment method', notificationTypes.ERROR);
+        return;
+    }
+    
+    // Validate payment details based on method
+    const validationErrors = [];
+    
+    if (paymentMethod === 'card') {
+        const cardNumber = formData.get('cardNumber')?.replace(/\s/g, '');
+        const expiryDate = formData.get('expiryDate');
+        const cvv = formData.get('cvv');
+        const cardholderName = formData.get('cardholderName');
+        
+        if (!cardNumber || cardNumber.length < 16) validationErrors.push('Valid card number is required');
+        if (!expiryDate || expiryDate.length < 5) validationErrors.push('Valid expiry date is required');
+        if (!cvv || cvv.length < 3) validationErrors.push('Valid CVV is required');
+        if (!cardholderName?.trim()) validationErrors.push('Cardholder name is required');
+    } else if (paymentMethod === 'upi') {
+        const upiId = formData.get('upiId');
+        if (!upiId?.includes('@')) validationErrors.push('Valid UPI ID is required');
+    }
+    
+    if (validationErrors.length > 0) {
+        showNotification(validationErrors.join('\n'), notificationTypes.ERROR);
+        return;
+    }
+    
+    const submitButton = document.getElementById('paymentSubmitBtn');
+    const originalText = submitButton.innerHTML;
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+    
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            showNotification('Authentication required. Please log in again.', notificationTypes.WARNING);
+            setTimeout(() => window.location.href = 'login.html', 2000);
+            return;
+        }
+        
+        // Prepare payment data
+        const paymentData = {
+            booking_id: parseInt(bookingId),
+            amount: parseFloat(amount),
+            payment_method: paymentMethod
+        };
+        
+        // Add method-specific data
+        if (paymentMethod === 'card') {
+            paymentData.card_details = {
+                card_number: formData.get('cardNumber').replace(/\s/g, ''),
+                expiry_date: formData.get('expiryDate'),
+                cvv: formData.get('cvv'),
+                cardholder_name: formData.get('cardholderName')
+            };
+        } else if (paymentMethod === 'upi') {
+            paymentData.upi_details = {
+                upi_id: formData.get('upiId')
+            };
+        }
+        
+        console.log('Processing payment:', paymentData);
+        
+        const response = await fetch(`${API_BASE_URL}/payments/process`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(paymentData)
+        });
+        
+        const result = await response.json();
+        console.log('Payment response:', result);
+        
+        if (!response.ok) {
+            throw new Error(result.message || 'Payment failed');
+        }
+        
+        // Show payment success
+        showPaymentSuccess(result);
+        
+    } catch (error) {
+        console.error('Payment error:', error);
+        showNotification(error.message || 'Payment failed. Please try again.', notificationTypes.ERROR);
+    } finally {
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalText;
+    }
+}
+
+function showPaymentSuccess(paymentResult) {
+    const modal = new bootstrap.Modal(document.getElementById('bookingModal'));
+    const modalBody = document.querySelector('#bookingModal .modal-body');
+    
+    modalBody.innerHTML = `
+        <div class="payment-success bg-dark text-light p-4 rounded text-center">
+            <div class="success-icon mb-4">
+                <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+            </div>
+            <h3 class="text-success mb-3">Payment Successful!</h3>
+            <p class="text-light mb-4">Your booking has been confirmed and payment processed successfully.</p>
+            
+            <div class="payment-details p-3 border border-success rounded mb-4">
+                <h5 class="text-success mb-3">Payment Details</h5>
+                <div class="row text-start">
+                    <div class="col-6"><strong>Transaction ID:</strong></div>
+                    <div class="col-6">${paymentResult.transaction_id}</div>
+                </div>
+                <div class="row text-start">
+                    <div class="col-6"><strong>Amount Paid:</strong></div>
+                    <div class="col-6">₹${paymentResult.amount}</div>
+                </div>
+                <div class="row text-start">
+                    <div class="col-6"><strong>Payment Method:</strong></div>
+                    <div class="col-6">${paymentResult.payment_method.toUpperCase()}</div>
+                </div>
+                <div class="row text-start">
+                    <div class="col-6"><strong>Status:</strong></div>
+                    <div class="col-6">
+                        <span class="badge bg-success">${paymentResult.status}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button type="button" class="btn btn-success me-2" onclick="viewBookings()">
+                    View My Bookings
+                </button>
+                <button type="button" class="btn btn-outline-success" onclick="continueBrowsing()">
+                    Continue Browsing
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function cancelPayment() {
+    if (confirm('Are you sure you want to cancel the payment? This will also cancel your booking.')) {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('bookingModal'));
+        if (modal) modal.hide();
+        
+        showNotification('Payment cancelled. Your booking has been cancelled.', notificationTypes.WARNING);
+        
+        // Redirect to cars page
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
+    }
+}
+
+function viewBookings() {
+    window.location.href = 'bookings.html';
+}
+
+function continueBrowsing() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('bookingModal'));
+    if (modal) modal.hide();
+    
+    showNotification('Thank you for your booking!', notificationTypes.SUCCESS);
+}
+
+// Card formatting functions
+function formatCardNumber(input) {
+    let value = input.value.replace(/\s/g, '').replace(/[^0-9]/gi, '');
+    let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+    input.value = formattedValue;
+}
+
+function formatExpiryDate(input) {
+    let value = input.value.replace(/\D/g, '');
+    if (value.length >= 2) {
+        value = value.substring(0, 2) + '/' + value.substring(2, 4);
+    }
+    input.value = value;
 }
